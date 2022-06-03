@@ -1,0 +1,60 @@
+ifdef::env-github[]
+:tip-caption: :bulb:
+:note-caption: :information_source:
+:important-caption: :heavy_exclamation_mark:
+:caution-caption: :fire:
+:warning-caption: :warning:
+endif::[]
+
+= dns-mokka
+
+DNS-MOKKA is a simple DNS mocker (mokka :) ) which can server valid predefined answers to all incoming DNS queries.
+
+== How to use
+
+DNS-MOKKA can be configured with environment variables.
+
+=== basic configuration
+
+|===
+|Variable |Description |Default value |Example
+
+|MOKKA_LOG_LEVEL
+|Logging level, one of `trace,debug,info,warn,error`
+|info
+|info
+
+|MOKKA_LISTEN_ADDRESS
+|Listening address for TCP and UDP (Plain DNS)
+|:53
+|0.0.0.0:53
+|===
+
+=== rules configuration
+
+You can define rules based on DNS request (query type and domain name), which response should be returned. Domain name will be matched against the regex defined in the rule. Rule can execute some function (for example return a fixed response, return an error code).
+
+IMPORTANT: All rules are applied in the fixed order (sorted by name). Please define more specific rules first and add a "catch-all" at the end.
+
+Each rule is defined as environment variable `MOKKA_RULE_XXX`, `XXX` is the rule name (important for order). The value of this variable has two parts: query type (for example A or AAAA) and the function, separated by space.
+
+
+Example rule definitions:
+
+|===
+|Variable |Value |Description
+
+|MOKKA_RULE_1
+|A google/NOERROR(1.2.3.4)
+|Returns "NOERROR" response with 1.2.3.4 record for "A" queries which match "google" as regex (for example www.google.com or googleanalytics.com)
+
+|MOKKA_RULE_2
+|A mydomain.com/NXDOMAIN()
+|Returns "NXDOMAIN" for query containing "mydomain.com"
+
+|MOKKA_RULE_§
+|A delay.com/delay(NOERROR("A 1.1.1.1 100"), "100ms")
+|Returns "1.1.1.1" for "delay.com", but adds also 100ms delay
+|===
+
+
