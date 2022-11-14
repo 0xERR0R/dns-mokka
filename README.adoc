@@ -45,14 +45,14 @@ Example rule definitions:
 |Variable |Value |Description
 
 |MOKKA_RULE_1
-|A google/NOERROR(1.2.3.4)
+|A google/NOERROR("A 1.2.3.4 123")
 |Returns "NOERROR" response with 1.2.3.4 record for "A" queries which match "google" as regex (for example www.google.com or googleanalytics.com)
 
 |MOKKA_RULE_2
 |A mydomain.com/NXDOMAIN()
 |Returns "NXDOMAIN" for query containing "mydomain.com"
 
-|MOKKA_RULE_§
+|MOKKA_RULE_3
 |A delay.com/delay(NOERROR("A 1.1.1.1 100"), "100ms")
 |Returns "1.1.1.1" for "delay.com", but adds also 100ms delay
 |===
