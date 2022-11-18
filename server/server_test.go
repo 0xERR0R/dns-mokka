@@ -24,6 +24,7 @@ var _ = BeforeSuite(func() {
 	os.Setenv("MOKKA_RULE_2", `A g/NOERROR("A 1.2.3.5 1")`)
 	os.Setenv("MOKKA_RULE_1", `A google/NOERROR("A 1.2.3.4 123")`)
 	os.Setenv("MOKKA_RULE_3", `A delay.com/delay(NOERROR("A 1.1.1.1 100"), "100ms")`)
+	os.Setenv("MOKKA_RULE_4", `A unknown/NXDOMAIN()`)
 
 	cfg, err := config.ReadConfig()
 	Expect(err).Should(Succeed())
@@ -99,6 +100,16 @@ var _ = Describe("Server", func() {
 				Expect(resp.Answer).Should(BeDNSRecord("delay.com.", dns.TypeA, 100, "1.1.1.1"))
 
 				Expect(time.Since(start)).Should(BeNumerically(">", 100*time.Millisecond))
+			})
+		})
+
+		Context("forth rule with NXDOMAIN", func() {
+			It("should return NXDOMAIN", func() {
+				msg := new(dns.Msg)
+				msg.SetQuestion(dns.Fqdn("unknown.com"), dns.TypeA)
+				resp, err := requestServer(msg)
+				Expect(err).Should(Succeed())
+				Expect(resp.Rcode).Should(Equal(dns.RcodeNameError))
 			})
 		})
 	})

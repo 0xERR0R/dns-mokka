@@ -27,7 +27,7 @@ type Record struct {
 
 func nxdomain() Result {
 	return Result{
-		RCode: dns.RcodeBadName,
+		RCode: dns.RcodeNameError,
 	}
 }
 

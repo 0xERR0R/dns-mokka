@@ -23,7 +23,7 @@ var _ = Describe("Functions", func() {
 				result := execute.(mock.Result)
 
 				Expect(result.Err).Should(BeNil())
-				Expect(result.RCode).Should(Equal(dns.RcodeBadName))
+				Expect(result.RCode).Should(Equal(dns.RcodeNameError))
 			})
 		})
 
