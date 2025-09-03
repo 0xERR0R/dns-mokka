@@ -32,7 +32,7 @@ archives:
       {{- if .Arm }}v{{ .Arm }}{{ end }}
 dockers_v2:
   - images:
-      - "ghcr.io/0xerr0r"
+      - "ghcr.io/0xerr0r/dns-mokka"
     tags:
       - "{{.Version}}"
       - latest
