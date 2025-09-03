@@ -29,7 +29,7 @@ jobs:
         with:
           registry: ghcr.io
           username: 0xerr0r
-          password: ${{ secrets.GH_PAT }}        
+          password: ${{ secrets.GITHUB_TOKEN }}        
       
       - name: Fetch all tags
         run: git fetch --force --tags
@@ -46,4 +46,4 @@ jobs:
           version: latest
           args: release --clean
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
