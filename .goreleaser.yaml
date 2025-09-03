@@ -1,3 +1,5 @@
+version: 2
+
 project_name: dns-mokka
 before:
   hooks:
@@ -19,7 +21,7 @@ builds:
 archives:
   - format_overrides:
       - goos: windows
-        format: zip
+        formats: zip
     name_template: >-
       {{ .ProjectName }}_
       {{- .Version }}_
@@ -30,10 +32,12 @@ archives:
       {{- if .Arm }}v{{ .Arm }}{{ end }}
 dockers_v2:
   - images:
-      - "ghcr.io/0xerr0r/{{ .ProjectName }}:{{ .Version }}"
-      - "ghcr.io/0xerr0r/{{ .ProjectName }}:latest"
+      - "ghcr.io/0xerr0r"
+    tags:
+      - "{{.Version}}"
+      - latest
     dockerfile: Dockerfile
-    platform:
+    platforms:
       - linux/amd64
       - linux/arm64
       - linux/arm/v6
@@ -41,7 +45,7 @@ dockers_v2:
 checksum:
   name_template: 'checksums.txt'
 snapshot:
-  name_template: "{{ .Tag }}-SNAPSHOT"
+  version_template: "{{ .Tag }}-SNAPSHOT"
 changelog:
   use: github
   sort: asc
