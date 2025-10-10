@@ -32,7 +32,7 @@ jobs:
         with:
           registry: ghcr.io
           username: 0xerr0r
-          password: ${{ secrets.GH_PAT }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Fetch all tags
         run: git fetch --force --tags
