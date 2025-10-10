@@ -1,10 +1,5 @@
-FROM alpine:3.16
+FROM scratch
 
-LABEL org.opencontainers.image.source="https://github.com/0xERR0R/dns-mokka" \
-      org.opencontainers.image.url="https://github.com/0xERR0R/dns-mokka" \
-      org.opencontainers.image.source=https://github.com/0xERR0R/dns-mokka \
-      org.opencontainers.image.title="simple DNS mocker"
-      
-
+ARG TARGETPLATFORM
 ENTRYPOINT ["/usr/bin/dns-mokka"]
-COPY dns-mokka /usr/bin/dns-mokka
+COPY  $TARGETPLATFORM/dns-mokka /usr/bin/dns-mokka
