@@ -44,7 +44,7 @@ var _ = BeforeSuite(func() {
 	Eventually(func() error {
 		msg := new(dns.Msg)
 		msg.SetQuestion(dns.Fqdn("google.de."), dns.TypeA)
-		_, err := requestServer(msg)
+		_, err := requestServer(msg, "udp")
 
 		return err
 	}, "5s").Should(BeNil())
@@ -52,16 +52,13 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = Describe("Server", func() {
-	BeforeEach(func() {
-
-	})
-	When("DNS request is performed", func() {
+	When("DNS request is performed over UDP", func() {
 		Context("first rule", func() {
 			It("should return expected result", func() {
 				msg := new(dns.Msg)
 				msg.SetQuestion(dns.Fqdn("google.de."), dns.TypeA)
 
-				resp, err := requestServer(msg)
+				resp, err := requestServer(msg, "udp")
 				Expect(err).Should(Succeed())
 				Expect(resp.Answer).Should(BeDNSRecord("google.de.", dns.TypeA, 123, "1.2.3.4"))
 			})
@@ -71,7 +68,7 @@ var _ = Describe("Server", func() {
 				msg := new(dns.Msg)
 				msg.SetQuestion(dns.Fqdn("domainwithg."), dns.TypeA)
 
-				resp, err := requestServer(msg)
+				resp, err := requestServer(msg, "udp")
 				start := time.Now()
 				Expect(err).Should(Succeed())
 				Expect(resp.Answer).Should(BeDNSRecord("domainwithg.", dns.TypeA, 1, "1.2.3.5"))
@@ -82,7 +79,7 @@ var _ = Describe("Server", func() {
 				msg := new(dns.Msg)
 				msg.SetQuestion(dns.Fqdn("domAINwithG"), dns.TypeA)
 
-				resp, err := requestServer(msg)
+				resp, err := requestServer(msg, "udp")
 				start := time.Now()
 				Expect(err).Should(Succeed())
 				Expect(resp.Answer).Should(BeDNSRecord("domAINwithG.", dns.TypeA, 1, "1.2.3.5"))
@@ -95,7 +92,7 @@ var _ = Describe("Server", func() {
 				msg.SetQuestion(dns.Fqdn("delay.com"), dns.TypeA)
 
 				start := time.Now()
-				resp, err := requestServer(msg)
+				resp, err := requestServer(msg, "udp")
 				Expect(err).Should(Succeed())
 				Expect(resp.Answer).Should(BeDNSRecord("delay.com.", dns.TypeA, 100, "1.1.1.1"))
 
@@ -107,43 +104,75 @@ var _ = Describe("Server", func() {
 			It("should return NXDOMAIN", func() {
 				msg := new(dns.Msg)
 				msg.SetQuestion(dns.Fqdn("unknown.com"), dns.TypeA)
-				resp, err := requestServer(msg)
+				resp, err := requestServer(msg, "udp")
+				Expect(err).Should(Succeed())
+				Expect(resp.Rcode).Should(Equal(dns.RcodeNameError))
+			})
+		})
+		Context("no rule matches", func() {
+			It("should return NXDOMAIN", func() {
+				msg := new(dns.Msg)
+				msg.SetQuestion(dns.Fqdn("unmatched.com"), dns.TypeA)
+				resp, err := requestServer(msg, "udp")
 				Expect(err).Should(Succeed())
 				Expect(resp.Rcode).Should(Equal(dns.RcodeNameError))
 			})
 		})
 	})
+
+	When("DNS request is performed over TCP", func() {
+		It("should return expected result", func() {
+			msg := new(dns.Msg)
+			msg.SetQuestion(dns.Fqdn("google.de."), dns.TypeA)
+
+			resp, err := requestServer(msg, "tcp")
+			Expect(err).Should(Succeed())
+			Expect(resp.Answer).Should(BeDNSRecord("google.de.", dns.TypeA, 123, "1.2.3.4"))
+		})
+	})
 })
 
-func requestServer(request *dns.Msg) (*dns.Msg, error) {
-	conn, err := net.Dial("udp", address)
-	if err != nil {
-		return nil, fmt.Errorf("could not connect to server: %w", err)
-	}
-	defer conn.Close()
+func requestServer(request *dns.Msg, network string) (*dns.Msg, error) {
+	var response *dns.Msg
 
-	msg, err := request.Pack()
-	if err != nil {
-		return nil, fmt.Errorf("can't pack request: %w", err)
-	}
-
-	_, err = conn.Write(msg)
-	if err != nil {
-		return nil, fmt.Errorf("can't send request to server: %w", err)
-	}
-
-	out := make([]byte, 1024)
-
-	if _, err := conn.Read(out); err == nil {
-		response := new(dns.Msg)
-		err := response.Unpack(out)
-
+	switch network {
+	case "udp":
+		conn, err := net.Dial("udp", address)
 		if err != nil {
-			return nil, fmt.Errorf("can't unpack response: %w", err)
+			return nil, fmt.Errorf("could not connect to server: %w", err)
+		}
+		defer conn.Close()
+
+		msg, err := request.Pack()
+		if err != nil {
+			return nil, fmt.Errorf("can't pack request: %w", err)
 		}
 
-		return response, nil
+		_, err = conn.Write(msg)
+		if err != nil {
+			return nil, fmt.Errorf("can't send request to server: %w", err)
+		}
+
+		out := make([]byte, 1024)
+
+		if _, err := conn.Read(out); err == nil {
+			response = new(dns.Msg)
+			err := response.Unpack(out)
+
+			if err != nil {
+				return nil, fmt.Errorf("can't unpack response: %w", err)
+			}
+		} else {
+			return nil, fmt.Errorf("could not read from connection: %w", err)
+		}
+	case "tcp":
+		c := dns.Client{Net: "tcp"}
+		resp, _, err := c.Exchange(request, address)
+		if err != nil {
+			return nil, fmt.Errorf("could not exchange request: %w", err)
+		}
+		response = resp
 	}
 
-	return nil, fmt.Errorf("could not read from connection: %w", err)
+	return response, nil
 }

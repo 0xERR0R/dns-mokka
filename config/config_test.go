@@ -64,7 +64,7 @@ var _ = Describe("Config", func() {
 
 		When("wrong arguments record", func() {
 			BeforeEach(func() {
-				os.Setenv(envRule+"1", `AAAA ./NOERROR("A 1.2.3.4 20 asdf")`)
+				os.Setenv(envRule+"1", `AAAA ./NOERROR("A 1.2.3.4")`)
 				DeferCleanup(os.Clearenv)
 			})
 			It("should fail", func() {

@@ -112,8 +112,10 @@ func (s *Server) OnRequest(rw dns.ResponseWriter, request *dns.Msg) {
 }
 
 func (s *Server) processRules(rulesForType []config.RegexRule, name string) (answers []dns.RR, rCode int) {
+	matched := false
 	for _, rr := range rulesForType {
 		if rr.Regex.MatchString(strings.ToLower(name)) {
+			matched = true
 			res, err := vm.Execute(s.env, nil, rr.Rule)
 			if err != nil {
 				log.Fatalf("can't execute rule '%s': %v", rr.Rule, err)
@@ -135,6 +137,10 @@ func (s *Server) processRules(rulesForType []config.RegexRule, name string) (ans
 
 			break
 		}
+	}
+
+	if !matched {
+		rCode = dns.RcodeNameError
 	}
 
 	return

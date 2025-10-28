@@ -7,30 +7,78 @@ ifdef::env-github[]
 endif::[]
 
 = dns-mokka
+:toc:
 
 DNS-MOKKA is a simple DNS mocker (mokka :) ) which can server valid predefined answers to all incoming DNS queries.
 
-== How to use
+== How to build
+
+You can build the binary by running:
+
+[source,bash]
+----
+make build
+----
+
+This will create the `dns-mokka` binary in the `bin` directory.
+
+== How to run
+
+You can run the application by using make:
+
+[source,bash]
+----
+make run
+----
+
+Or by directly running the binary:
+
+[source,bash]
+----
+./bin/dns-mokka
+----
+
+=== Docker
+
+You can also build and run the application using Docker.
+
+Build the Docker image:
+
+[source,bash]
+----
+make docker-build
+----
+
+Run the Docker image:
+
+[source,bash]
+----
+docker run -p 53:53/udp -p 53:53/tcp 0xerr0r/dns-mokka
+----
+
+NOTE: You need to pass the configuration as environment variables to the docker container.
+
+== Configuration
 
 DNS-MOKKA can be configured with environment variables.
 
-=== basic configuration
+=== Basic configuration
 
 |===
 |Variable |Description |Default value |Example
 
-|MOKKA_LOG_LEVEL
+|`MOKKA_LOG_LEVEL`
 |Logging level, one of `trace,debug,info,warn,error`
-|info
-|info
+|`info`
+|`info`
 
-|MOKKA_LISTEN_ADDRESS
+|`MOKKA_LISTEN_ADDRESS`
 |Listening address for TCP and UDP (Plain DNS)
-|:53
-|0.0.0.0:53
+|`:53`
+|`0.0.0.0:53`
 |===
 
-=== rules configuration
+=== Rules configuration
 
 You can define rules based on DNS request (query type and domain name), which response should be returned. Domain name will be matched against the regex defined in the rule. Rule can execute some function (for example return a fixed response, return an error code).
 
@@ -38,23 +86,47 @@ IMPORTANT: All rules are applied in the fixed order (sorted by name). Please def
 
 Each rule is defined as environment variable `MOKKA_RULE_XXX`, `XXX` is the rule name (important for order). The value of this variable has two parts: query type (for example A or AAAA) and the function, separated by space.
 
+==== Available functions
 
-Example rule definitions:
+|===
+|Function |Description
+
+|`NXDOMAIN()`
+|Returns an `NXDOMAIN` response.
+
+|`NOERROR("record1", "record2", ...)`
+|Returns a `NOERROR` response with the given records.
+The record format is `TYPE ADDRESS TTL`. For example: `A 1.2.3.4 123`.
+For complex record types like `RRSIG`, you can use the full DNS wire format: `TYPE full-rdata-string TTL`.
+
+|`delay(function, "duration")`
+|Delays the execution of the given function. The duration is a string like "100ms" or "1s".
+|===
+
+
+==== Example rule definitions
 
 |===
 |Variable |Value |Description
 
-|MOKKA_RULE_1
-|A google/NOERROR("A 1.2.3.4 123")
+|`MOKKA_RULE_1`
+|`A google/NOERROR("A 1.2.3.4 123")`
 |Returns "NOERROR" response with 1.2.3.4 record for "A" queries which match "google" as regex (for example www.google.com or googleanalytics.com)
 
-|MOKKA_RULE_2
-|A mydomain.com/NXDOMAIN()
+|`MOKKA_RULE_2`
+|`A mydomain.com/NXDOMAIN()`
 |Returns "NXDOMAIN" for query containing "mydomain.com"
 
-|MOKKA_RULE_3
-|A delay.com/delay(NOERROR("A 1.1.1.1 100"), "100ms")
+|`MOKKA_RULE_3`
+|`A delay.com/delay(NOERROR("A 1.1.1.1 100"), "100ms")`
 |Returns "1.1.1.1" for "delay.com", but adds also 100ms delay
 |===
 
+== How to test
 
+You can run the tests by running:
+
+[source,bash]
+----
+make test
+----
