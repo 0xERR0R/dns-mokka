@@ -40,6 +40,27 @@ var _ = Describe("Functions", func() {
 				Expect(result.RR[0].Address).Should(Equal("1.2.3.4"))
 				Expect(result.RR[0].RType).Should(Equal("A"))
 			})
+
+			It("should return valid response with RRSIG record", func() {
+				execute, err := vm.Execute(env, nil,
+					`NOERROR("A 1.2.3.4 300", "RRSIG A 13 3 300 20991231235959 20230101000000 12345 invalid.dnssec.test. fakesignaturedata== 300")`)
+				Expect(err).Should(Succeed())
+				result := execute.(mock.Result)
+
+				Expect(result.Err).Should(BeNil())
+				Expect(result.RCode).Should(Equal(dns.RcodeSuccess))
+				Expect(result.RR).Should(HaveLen(2))
+
+				// First record is A record
+				Expect(result.RR[0].TTL).Should(BeNumerically("==", 300))
+				Expect(result.RR[0].Address).Should(Equal("1.2.3.4"))
+				Expect(result.RR[0].RType).Should(Equal("A"))
+
+				// Second record is RRSIG
+				Expect(result.RR[1].TTL).Should(BeNumerically("==", 300))
+				Expect(result.RR[1].RType).Should(Equal("RRSIG"))
+				Expect(result.RR[1].Address).Should(ContainSubstring("A 13 3 300"))
+			})
 		})
 	})
 })

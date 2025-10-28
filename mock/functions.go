@@ -69,22 +69,34 @@ func delay(fn Result, duration ...string) Result {
 func parseRecord(in string) (Record, error) {
 	parts := strings.Split(in, " ")
 
-	const recordTokens = 3
-
-	if len(parts) != recordTokens {
+	// For RRSIG and other complex records, allow full DNS wire format
+	// Format: "TYPE full-rdata-string TTL"
+	// For simple records: "TYPE ADDRESS TTL"
+	if len(parts) < 3 {
 		return Record{}, fmt.Errorf("record should be in format 'TYPE ANSWER TTL', for example 'A 1.2.3.4 20'")
 	}
 
-	ttl, err := strconv.Atoi(parts[2])
-	if err == nil {
-		return Record{
-			RType:   parts[0],
-			Address: parts[1],
-			TTL:     ttl,
-		}, nil
+	// Try to parse TTL from the last part
+	ttl, err := strconv.Atoi(parts[len(parts)-1])
+	if err != nil {
+		return Record{}, fmt.Errorf("TTL can't be parsed: %w", err)
 	}
 
-	return Record{}, fmt.Errorf("TTL can't be parsed: %w", err)
+	// For records with more than 3 parts (like RRSIG), combine middle parts as the address
+	rtype := parts[0]
+	var address string
+	if len(parts) > 3 {
+		// Join all parts between type and TTL
+		address = strings.Join(parts[1:len(parts)-1], " ")
+	} else {
+		address = parts[1]
+	}
+
+	return Record{
+		RType:   rtype,
+		Address: address,
+		TTL:     ttl,
+	}, nil
 }
 
 func CreateEnv() (*env.Env, error) {
