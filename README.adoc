@@ -16,9 +16,9 @@ DNS-MOKKA is a simple DNS mocker (mokka :) ) which can server valid predefined a
 You can build the binary by running:
 
 [source,bash]
-----
+-----
 make build
-----
+-----
 
 This will create the `dns-mokka` binary in the `bin` directory.
 
@@ -27,16 +27,16 @@ This will create the `dns-mokka` binary in the `bin` directory.
 You can run the application by using make:
 
 [source,bash]
-----
+-----
 make run
-----
+-----
 
 Or by directly running the binary:
 
 [source,bash]
-----
+-----
 ./bin/dns-mokka
-----
+-----
 
 === Docker
 
@@ -45,16 +45,16 @@ You can also build and run the application using Docker.
 Build the Docker image:
 
 [source,bash]
-----
+-----
 make docker-build
-----
+-----
 
 Run the Docker image:
 
 [source,bash]
-----
+-----
 docker run -p 53:53/udp -p 53:53/tcp 0xerr0r/dns-mokka
-----
+-----
 
 NOTE: You need to pass the configuration as environment variables to the docker container.
 
@@ -122,11 +122,45 @@ For complex record types like `RRSIG`, you can use the full DNS wire format: `TY
 |Returns "1.1.1.1" for "delay.com", but adds also 100ms delay
 |===
 
+==== Record Type Examples
+
+|===
+|Type |Example Rule |Description
+
+|MX
+|`MX example.com/NOERROR("MX 10 mail.example.com. 300")`
+|Returns an MX record for `example.com`.
+
+|TXT
+|`TXT example.com/NOERROR("TXT \"hello world\" 300")`
+|Returns a TXT record for `example.com`.
+
+|CNAME
+|`CNAME www/NOERROR("CNAME www.example.com. 300")`
+|Returns a CNAME record for `www.example.com`.
+
+|NS
+|`NS example.com/NOERROR("NS ns1.example.com. 300")`
+|Returns an NS record for `example.com`.
+
+|PTR
+|`PTR 4.3.2.1.in-addr.arpa/NOERROR("PTR www.example.com. 300")`
+|Returns a PTR record for `1.2.3.4`.
+
+|SRV
+|`SRV _sip._tcp.example.com/NOERROR("SRV 10 60 5060 sip.example.com. 300")`
+|Returns an SRV record for `_sip._tcp.example.com`.
+
+|CAA
+|`CAA example.com/NOERROR("CAA 0 issue \"letsencrypt.org\" 300")`
+|Returns a CAA record for `example.com`.
+|===
+
 == How to test
 
 You can run the tests by running:
 
 [source,bash]
-----
+-----
 make test
-----
+-----
